@@ -3,90 +3,59 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# Konfiguration
-st.set_page_config(page_title="TikTok Live Dashboard", layout="wide")
-st.title("📺 TikTok Live mit Chat")
+# Dashboard-Konfiguration
+st.set_page_config(page_title="TikTok Dual View", layout="wide")
+st.title("📺 TikTok Livestream + Chat Tracker")
 
-# Chat-Datei definieren
-CHAT_FILE = "chat.csv"
-if not os.path.exists(CHAT_FILE):
-    pd.DataFrame(columns=["User", "Kommentar"]).to_csv(CHAT_FILE, index=False)
+# Sidebar: Creator eingeben
+st.sidebar.header("🎯 TikTok-Creator auswählen")
+username_input = st.sidebar.text_input("TikTok Username", value="naruepatnew")
 
-# UI-Styles
-st.markdown("""
-<style>
-.chat-container {
-    background-color: #1e1e20;
-    padding: 1em;
-    border-radius: 10px;
-    max-height: 600px;
-    overflow-y: auto;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 0.95rem;
-    color: #f2f2f2;
-}
-.chat-bubble {
-    background-color: #2c2c2e;
-    padding: 0.6em 1em;
-    border-radius: 15px;
-    margin-bottom: 0.5em;
-}
-.chat-user {
-    color: #fe2c55;
-    font-weight: bold;
-}
-</style>
-""", unsafe_allow_html=True)
+# Dynamischer Pfad zur Chat-Datei
+chat_file = f"chat_{username_input}.csv"
+if not os.path.exists(chat_file):
+    pd.DataFrame(columns=["User", "Kommentar"]).to_csv(chat_file, index=False)
 
-# Spalten
-col1, col2 = st.columns([3, 1])
+# Spalten: Stream links, Chat rechts
+stream_col, chat_col = st.columns([3, 1])
 
-with col1:
-    st.subheader("🔴 Livestream")
-    st.markdown("""
-    <a href="https://www.tiktok.com/@naruepatnew/live" target="_blank">
-        <button style="background-color:#fe2c55;color:#fff;padding:0.6em 1.2em;border:none;
-        border-radius:8px;font-size:1rem;cursor:pointer;">
-        Jetzt TikTok-Stream öffnen
-        </button>
-    </a>
+with stream_col:
+    st.subheader(f"🔴 Livestream: @{username_input}")
+    tiktok_url = f"https://www.tiktok.com/@{username_input}/live"
+    st.markdown(f"""
+    <iframe src="{tiktok_url}" height="600" width="100%" frameborder="0"
+    allowfullscreen allow="autoplay"></iframe>
     """, unsafe_allow_html=True)
+    st.caption("⚠️ Falls der Livestream im iframe nicht funktioniert, öffne ihn im neuen Tab:")
+    st.markdown(f"[🌐 Direkt ansehen bei TikTok →]({tiktok_url})")
 
-    st.markdown("### 💬 Kommentar abgeben")
-    with st.form(key="chat_form"):
-        username = st.text_input("Benutzername")
-        kommentar = st.text_area("Kommentar")
-        senden = st.form_submit_button("📤 Absenden")
-
-        if senden and username.strip() and kommentar.strip():
-            chat = pd.read_csv(CHAT_FILE)
-            neuer_eintrag = pd.DataFrame([{
-                "User": username.strip(),
-                "Kommentar": kommentar.strip()
-            }])
-            chat = pd.concat([chat, neuer_eintrag], ignore_index=True)
-            chat.to_csv(CHAT_FILE, index=False)
-            st.success("✅ Kommentar gespeichert!")
-
-with col2:
+with chat_col:
     st.subheader("💬 Live-Chat")
 
     try:
-        chat = pd.read_csv(CHAT_FILE)
-        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-        for _, row in chat.iterrows():
-            st.markdown(f"""
-            <div class="chat-bubble">
-                <span class="chat-user">{row['User']}</span><br>{row['Kommentar']}
-            </div>
-            """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        chat = pd.read_csv(chat_file)
+        if chat.empty:
+            st.info("Keine Kommentare vorhanden.")
+        else:
+            st.markdown(
+                '<div style="background-color:#1e1e20;padding:1em;border-radius:8px;'
+                'max-height:600px;overflow-y:auto;font-family:sans-serif;">',
+                unsafe_allow_html=True
+            )
+            for _, row in chat.iterrows():
+                st.markdown(f"""
+                <div style="margin-bottom:0.75em;">
+                    <span style="color:#fe2c55;font-weight:bold;">{row['User']}</span><br>
+                    <span style="color:#f2f2f2;">{row['Kommentar']}</span>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         if st.button("💾 Chat speichern"):
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"chat_{ts}.csv"
-            chat.to_csv(filename, index=False)
-            st.success(f"📁 Chat gespeichert als `{filename}`")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            export_file = f"{username_input}_chat_{timestamp}.csv"
+            chat.to_csv(export_file, index=False)
+            st.success(f"✅ Chat gespeichert als `{export_file}`")
 
     except Exception as e:
-        st.error(f"Fehler beim Laden von `chat.csv`: {e}")
+        st.error(f"Fehler beim Laden von `{chat_file}`: {e}")
