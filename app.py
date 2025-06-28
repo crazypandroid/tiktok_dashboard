@@ -2,10 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-st.set_page_config(page_title="TikTok Viewer", layout="wide")
-st.title("📺 TikTok Live – Viewer & Recorder")
+# Streamlit Konfiguration
+st.set_page_config(page_title="TikTok Live Dashboard", layout="wide")
+st.title("📺 TikTok Live mit Chat")
 
-# Custom CSS für Chat-Stil
+# Custom CSS für modernes UI
 st.markdown("""
 <style>
 .chat-container {
@@ -31,36 +32,44 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Spalten
-col_stream, col_chat = st.columns([3, 1])
+# Spaltenaufteilung
+col1, col2 = st.columns([3, 1])
 
-# Lade Chat-Datei
-try:
-    chat_df = pd.read_csv("chat.csv")
-except Exception:
-    chat_df = pd.DataFrame(columns=["User", "Kommentar"])
+with col1:
+    st.subheader("🔴 Livestream")
+    st.markdown("""
+    <a href="https://www.tiktok.com/@naruepatnew/live" target="_blank">
+        <button style="background-color:#fe2c55;color:#fff;padding:0.6em 1.2em;border:none;
+        border-radius:8px;font-size:1rem;cursor:pointer;">
+        Jetzt TikTok-Stream öffnen
+        </button>
+    </a>
+    """, unsafe_allow_html=True)
 
-with col_stream:
-    st.subheader("🎬 Livestream")
-    st.markdown("👉 [@naruepatnew live auf TikTok ansehen](https://www.tiktok.com/@naruepatnew/live)")
-    st.video("example_stream.mp4")
-
-    # Aufnahme-Button
-    if st.button("📥 Chat speichern"):
-        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"chat_{now}.csv"
-        chat_df.to_csv(filename, index=False)
-        st.success(f"💾 Chat gespeichert als `{filename}`")
-
-with col_chat:
+with col2:
     st.subheader("💬 Live-Chat")
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    for _, row in chat_df.iterrows():
-        user = row["User"]
-        msg = row["Kommentar"]
-        st.markdown(f"""
-        <div class="chat-bubble">
-            <span class="chat-user">{user}</span><br>{msg}
-        </div>
-        """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    try:
+        chat = pd.read_csv("chat.csv")
+
+        # Chat anzeigen
+        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+        for _, row in chat.iterrows():
+            user = row['User']
+            msg = row['Kommentar']
+            st.markdown(f"""
+            <div class="chat-bubble">
+                <span class="chat-user">{user}</span><br>{msg}
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Chat speichern
+        if st.button("💾 Chat speichern"):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"chat_{timestamp}.csv"
+            chat.to_csv(filename, index=False)
+            st.success(f"✅ Chat gespeichert als `{filename}`")
+
+    except FileNotFoundError:
+        st.warning("⚠️ Die Datei `chat.csv` wurde nicht gefunden.")
