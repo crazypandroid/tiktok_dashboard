@@ -1,12 +1,19 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import os
 
 # Streamlit Konfiguration
 st.set_page_config(page_title="TikTok Live Dashboard", layout="wide")
 st.title("📺 TikTok Live mit Chat")
 
-# Custom CSS für modernes UI
+# Chat-Datei vorbereiten
+CHAT_FILE = "chat.csv"
+if not os.path.exists(CHAT_FILE):
+    df_init = pd.DataFrame(columns=["User", "Kommentar"])
+    df_init.to_csv(CHAT_FILE, index=False)
+
+# Custom CSS für TikTok-Vibe
 st.markdown("""
 <style>
 .chat-container {
@@ -46,30 +53,13 @@ with col1:
     </a>
     """, unsafe_allow_html=True)
 
-with col2:
-    st.subheader("💬 Live-Chat")
+    # Kommentar-Eingabe
+    st.markdown("### 💬 Kommentar posten")
+    with st.form(key="chat_form"):
+        user = st.text_input("Benutzername", max_chars=30, key="username")
+        kommentar = st.text_area("Dein Kommentar", key="comment")
+        send = st.form_submit_button("📤 Abschicken")
 
-    try:
-        chat = pd.read_csv("chat.csv")
-
-        # Chat anzeigen
-        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-        for _, row in chat.iterrows():
-            user = row['User']
-            msg = row['Kommentar']
-            st.markdown(f"""
-            <div class="chat-bubble">
-                <span class="chat-user">{user}</span><br>{msg}
-            </div>
-            """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        # Chat speichern
-        if st.button("💾 Chat speichern"):
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"chat_{timestamp}.csv"
-            chat.to_csv(filename, index=False)
-            st.success(f"✅ Chat gespeichert als `{filename}`")
-
-    except FileNotFoundError:
-        st.warning("⚠️ Die Datei `chat.csv` wurde nicht gefunden.")
+        if send and user.strip() and kommentar.strip():
+            df = pd.read_csv(CHAT_FILE)
+            new_row = pd.DataFrame({"User": 
