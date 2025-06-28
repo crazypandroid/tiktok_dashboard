@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-st.set_page_config(page_title="TikTok Viewer", layout="wide")
+st.set_page_config(page_title="TikTok Viewer1", layout="wide")
 st.title("📺 TikTok Live – Viewer & Recorder")
 
 # Custom CSS für Chat-Stil
